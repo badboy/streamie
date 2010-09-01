@@ -153,7 +153,7 @@ require.def("stream/streamplugins",
         name: 'expandLinks',
         func: function(tweet){
           tweet.node.find('.text a').each(function(index, link){
-          if(link.href.length < 30){ //assume no shortener uses > 30 chrs
+          if(link.href.length < 30 && link.href == $(link).text()){ //assume no shortener uses > 30 chrs
             $.getJSON('http://almaer.com/endpoint/resolver.php?callback=?',
               {url: link.href},
               function(url){
