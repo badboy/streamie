@@ -149,6 +149,24 @@ require.def("stream/streamplugins",
         }
       },
       
+      expandLinks: {
+        name: 'expandLinks',
+        func: function(tweet){
+          tweet.node.find('.text a').each(function(index, link){
+          if(link.href.length < 30){ //assume no shortener uses > 30 chrs
+            $.getJSON('http://almaer.com/endpoint/resolver.php?callback=?',
+              {url: link.href},
+              function(url){
+                $(link).text(url);
+                $(link).attr('title', link.href); //set title to old one.
+                $(link).attr('href', url);
+              })
+            }
+          });
+          this();
+        }
+      },
+
       // calculate the age of the tweet and update it
       // tweet.created_at now includes an actual Date
       age: {
