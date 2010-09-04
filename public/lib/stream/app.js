@@ -64,7 +64,6 @@ require.def("stream/app",
     // linkPlugins are executed for each link in a tweet
     // they perform actions such as previewing images or expading short URLs
     var linkPlugins = [
-      linkPlugin.expandLinks,
       linkPlugin.imagePreview
     ];
     
