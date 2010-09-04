@@ -39,6 +39,22 @@ require.def("stream/linkplugins",
           }
         }
       },
+
+      expandLinks: {
+        name: 'expandLinks',
+        func: function(link, tweet){
+          // assume no shortener uses > 30 chrs
+          if(link.attr('href').length < 30 && link.attr('href') == link.text()){
+            $.getJSON('http://almaer.com/endpoint/resolver.php?callback=?',
+              {url: link.attr('href')},
+              function(url){
+                link.text(url);
+                link.attr('title', link.href); //set title to old one.
+                link.attr('href', url);
+              })
+            }
+          }
+      },
     }
       
   }
