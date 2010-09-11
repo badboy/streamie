@@ -1,11 +1,15 @@
 #content{
 	#stream{
 		height:100%;
-		li{
+		li.tweet{
 			position:relative;
 			clear:both;
 			margin:0 0 20px 0;
 			#client-transition-time > .short;
+			z-index: 0;
+			&:hover{
+				z-index:1;
+			}
 			&.new{
 				-webkit-animation-name: fadein;
 				-webkit-animation-duration: 2s;
@@ -65,11 +69,20 @@
 						display:inline-block;
 						width:70px;
 					}
-					img{
-						height: 12px;
-						#client-transition-time > .short;
+					
+					.image-preview{
+						position:relative;
+						width:10px;
+						overflow:hidden;
+						img{
+							height: 12px;
+						}
 						&:hover{
-							height:150px;
+							img{
+								z-index:1;
+								position:absolute;
+								height:150px;
+							}
 						}
 					}
 				}
@@ -166,6 +179,15 @@
 			    margin: 32px;
 			  }
 			}
+			&.direct{
+			  .status{
+			  	@color:#0000ff;
+				border-color:@color !important;
+				&:after{
+					border-right-color:@color;
+				}
+			  }
+			}
 			&.starred{
 			  .status .actions li.favorite{
 					opacity:1;
@@ -206,6 +228,14 @@ body.starred #content #stream {
 	li{
 		display:none;
 		&.starred{
+			display:block;
+		}
+	}
+}
+body.direct #content #stream {
+	li{
+		display:none;
+		&.direct{
 			display:block;
 		}
 	}

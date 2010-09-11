@@ -10,17 +10,23 @@ require.def("stream/linkplugins",
     return {
       
       imagePreview: {
-        name: "imagePreview",
         transformations: {
           standard: function (url) {
             return "http://"+url.host+"/show/thumb"+url.path;
           },
           yfrog: function (url) {
             return "http://"+url.host+url.path+".th.jpg";
+          },
+          "i.imgur.com": function (url) {
+            var path = (url.path || "").replace(/(?:.jpg)?$/, "s.jpg");
+            return "http://"+url.host+path;
+          },
+          "imgur.com": function (url) {
+            return this["i.imgur.com"](url);
           }
         },
-        domains: ["img.ly", "twitpic.com", "yfrog"],
-        func: function (a, tweet, stream, plugin) { // a is a jQuery object of the a-tag
+        domains: ["img.ly", "twitpic.com", "yfrog", "imgur.com", "i.imgur.com"],
+        func: function imagePreview (a, tweet, stream, plugin) { // a is a jQuery object of the a-tag
           var prefixLength = "http://".length;
           var href = a.attr("href") || "";
           var domains = plugin.domains;
@@ -29,12 +35,14 @@ require.def("stream/linkplugins",
             if(href.indexOf(domain) === prefixLength) {
               var url = parseUri(href);
               var trans = plugin.transformations[domain] || plugin.transformations.standard;
-              var previewURL = trans(url);
+              var previewURL = trans.call(plugin.transformations, url);
               var image = new Image();
               image.src = previewURL;
+              var div = $('<span class="image-preview"/>');
+              div.append(image)
               /*image.width = 150;
               image.height = 150;*/
-              a.addClass("image").append(image);
+              a.addClass("image").append(div);
             }
           }
         }
