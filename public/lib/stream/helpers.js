@@ -4,13 +4,13 @@
 
 require.def("stream/helpers",
   function() {
-    
+
     var AMP_RE = /&/g;
     var LT_RE  = /</g;
     var GT_RE  = />/g;
     var QUOT_RE = /"/g;
     var SINGLE_RE = /'/g;
-    
+
     return {
       // encode text into HTML to avoid XSS attacks.
       // underscore templates do not auto encode. If in doubt, use this!
@@ -23,6 +23,6 @@ require.def("stream/helpers",
         return text;
       }
     }
-      
+
   }
 );

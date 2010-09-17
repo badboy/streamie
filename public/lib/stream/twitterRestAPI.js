@@ -5,7 +5,7 @@
  *
  * You can make all Rest API calls document here http://apiwiki.twitter.com/Twitter-API-Documentation
  * Including and especially the authenticated APIs
- * 
+ *
  * For examples of usage of API calls, see
  * streamplugins.js/prefillTimeline &
  * status.js
@@ -16,12 +16,12 @@
 
 require.def("stream/twitterRestAPI",
   function() {
-    
+
     var devCacheEnabled = location.search.match(/cache/); // enable an API cache to make loading faste in development
     var DevCache = {};
-    
+
     function handler(method, url, requestData, callback) {
-      
+
       if(devCacheEnabled) {
         var cache = sessionStorage.getItem("devcache:"+url);
         if(cache) {
@@ -31,7 +31,7 @@ require.def("stream/twitterRestAPI",
           }, 0)
         }
       }
-      
+
       var success = function(data, status, xhr) {
         if(devCacheEnabled) {
           if(status == "success") {
@@ -43,12 +43,12 @@ require.def("stream/twitterRestAPI",
         }
         callback.apply(this, arguments);
       };
-      
+
       var error = function (xhr, status, errorThrown) {
         console.log("[Twitter RestAPI Error] Status '"+xhr.statusText+"' URL: "+url+" Request Data "+JSON.stringify(requestData)); // always log to the console if there was an API error
         callback.apply(this, arguments); // we always call the callback. Check our status!
       };
-      
+
       // make the actual request
       $.ajax({
         url: "/twitter"+url, // all URLs starting with /twitter get proxied to twitter (with oauth signing)
@@ -58,7 +58,7 @@ require.def("stream/twitterRestAPI",
         error: error
       });
     }
-    
+
     var api = {
       // make get requests. Callback is Function(data, status, xhr) where status is "success" or something else
       get: function (url, data, callback) {
@@ -68,7 +68,7 @@ require.def("stream/twitterRestAPI",
         }
         handler("GET", url, data, callback);
       },
-      
+
       // make post requests. Callback is Function(data, status, xhr) where status is "success" or something else
       post: function (url, data, callback) {
         if(typeof data == "function") { // data can be left out
@@ -78,7 +78,7 @@ require.def("stream/twitterRestAPI",
         handler("POST", url, data, callback);
       }
     };
-    
+
     return api;
   }
 );
