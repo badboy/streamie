@@ -5,30 +5,30 @@
 require.def("stream/tweetstream",
   ["stream/tweet", "stream/twitterRestAPI"],
   function(tweetModule, rest) {
-      
+
     function Stream(settings) {
       this.settings    = settings; // settings for streamie
       this.plugins     = []; // I have a set of plugins for transforming tweets
       this.linkPlugins = []; // A set of plugins for tranforming links in tweets
     }
-    
+
     Stream.prototype = {
-      
+
       user: { // the current authorized user
         screen_name: null, // will be populated after auth
         user_id: null
       },
-      
+
       // register more plugins for stream processing
       addPlugins: function (plugins) {
         this.plugins.push.apply(this.plugins, plugins);
       },
-      
+
       // register more plugins for link processing
       addLinkPlugins: function (plugins) {
         this.linkPlugins.push.apply(this.linkPlugins, plugins);
       },
-      
+
       // sets or returns the newest tweet ever seen
       newestTweet: function (newID) {
         if(newID) {
@@ -36,12 +36,12 @@ require.def("stream/tweetstream",
         }
         return parseInt(window.localStorage.newestTweet || 0, 10);
       },
-      
+
       // this is where we draw
       canvas: function () {
         return $("#stream")
       },
-      
+
       // Get the full info for the current user. See http://apiwiki.twitter.com/Twitter-REST-API-Method:-users%C2%A0show
       // the callback "cb" will receive the data. The API call is cache after the first call
       userInfo: function (cb) {
@@ -60,7 +60,7 @@ require.def("stream/tweetstream",
           }
         });
       },
-      
+
       // go through the list of plugins for a tweet.
       // Each plugin will get the next plugin as its this
       // You need to call this: this()
@@ -79,13 +79,13 @@ require.def("stream/tweetstream",
         }
         next();
       },
-      
+
       count: 0 // count is incremented in the streamplugin/tweetsOnly
     };
-    
+
     return {
       Stream: Stream
     }
-      
+
   }
 );

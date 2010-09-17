@@ -5,16 +5,16 @@
 require.def("stream/initplugins",
   ["stream/tweet", "stream/settings", "stream/twitterRestAPI", "stream/helpers", "text!../templates/tweet.ejs.html"],
   function(tweetModule, settings, rest, helpers, templateText) {
-    
+
     settings.registerNamespace("general", "General");
     settings.registerKey("general", "showTwitterBackground", "Show my background from Twitter",  false);
-    
+
     settings.registerNamespace("notifications", "Notifications");
     settings.registerKey("notifications", "favicon", "Highlight Favicon (Website icon)",  true);
     settings.registerKey("notifications", "throttle", "Throttle (Only notify once per minute)", false);
-    
+
     return {
-      
+
       // when location.hash changes we set the hash to be the class of our HTML body
       hashState: {
         ScrollState: {},
@@ -25,7 +25,7 @@ require.def("stream/initplugins",
             $("body").attr("class", val);
             // { custom-event: stat:XXX }
             $(document).trigger("state:"+val);
-            
+
             var scrollState = plugin.ScrollState[val || "all"];
             if(scrollState != null) {
               win.scrollTop(scrollState);
@@ -33,13 +33,13 @@ require.def("stream/initplugins",
           }
           win.bind("hashchange", change); // who cares about old browsers?
           change();
-          
+
           win.bind("scroll", function () {
             plugin.ScrollState[location.hash.replace(/^\#/, "") || "all"] = win.scrollTop();
           })
         }
       },
-      
+
       // change the background to the twitter background
       background: {
         func: function background (stream) {
@@ -56,23 +56,23 @@ require.def("stream/initplugins",
           });
         }
       },
-      
+
       // make the clicked nav item "active"
       navigation: {
         func: function navigation (stream) {
           var mainstatus = $("#mainstatus");
-          
+
           mainstatus.bind("close", function () {
             if(mainstatus.hasClass("show")) {
               mainstatus.removeClass("show");
             }
           });
-          
+
           $("#header").delegate("#mainnav a", "click", function (e) {
             var a = $(this);
             a.blur();
             var li = a.closest("li");
-            
+
             if(li.hasClass("add")) { // special case for new tweet
               e.preventDefault();
               if(mainstatus.hasClass("show")) {
@@ -87,29 +87,29 @@ require.def("stream/initplugins",
               li.addClass("active")
             }
           });
-          
+
           mainstatus.bind("status:send", function () {
             mainstatus.removeClass("show");
           });
-          
+
          //  $("#header").delegate("#mainnav li.add", "mouseenter mouseleave", function () {
 //             mainstatus.toggleClass("tease");
 //           })
         }
       },
-      
+
       // signals new tweets
       signalNewTweets: {
         func: function signalNewTweets () {
           var win = $(window);
           var dirty = win.scrollTop() > 0;
           var newCount = 0;
-          
+
           function redraw() {
             var signal = newCount > 0 ? "("+newCount+") " : "";
             document.title = document.title.replace(/^(?:\(\d+\) )*/, signal);
           }
-          
+
           win.bind("scroll", function () {
             dirty = win.scrollTop() > 0;
             if(!dirty) { // we scrolled to the top. Back to 0 unread
@@ -130,8 +130,8 @@ require.def("stream/initplugins",
             }
           })
         }
-      },      
-      
+      },
+
       // tranform "tweet:unread" events into "notify:tweet:unread" events
       // depending on setting, only fire the latter once a minute
       throttableNotifactions: {
@@ -156,15 +156,15 @@ require.def("stream/initplugins",
           });
         }
       },
-      
+
       // listen to keyboard events and translate them to semantic custom events
       keyboardShortCuts: {
         func: function keyboardShortCuts () {
-          
+
           function trigger(e, name) {
             $(e.target).trigger("key:"+name);
           }
-          
+
           $(document).keyup(function (e) {
             if(e.keyCode == 27) { // escape
               trigger(e, "escape")
@@ -172,17 +172,17 @@ require.def("stream/initplugins",
           })
         }
       },
-      
+
       personalizeForCurrentUser: {
         func: function personalizeForCurrentUser (stream) {
           $("#currentuser-screen_name").text("@"+stream.user.screen_name)
         }
       },
-      
+
       // sends an event after user
       notifyAfterPause: {
         func: function notifyAfterPause () {
-          
+
           function now() {
             return (new Date).getTime();
           }
@@ -198,50 +198,29 @@ require.def("stream/initplugins",
           }, 2000)
         }
       },
-      
+
       // display state in the favicon
       favicon: {
-        
-        canvases: {}, // cache for canvas objects
-        colorCanvas: function (color) {
-          // remove the current favicon. Just changung the href doesnt work.
-          var favicon = $("link[rel~=icon]")
-          favicon.remove()
-          var canvas = this.canvases[color];
-          if(!canvas) {
-            // make a quick canvas.
-            canvas = document.createElement("canvas");
-            canvas.width = 16;
-            canvas.height = 16;
-            var ctx = canvas.getContext("2d");
-            ctx.fillStyle = color;  
-            ctx.fillRect(0, 0, 16, 16);
-            this.canvases[color] = canvas
-          }
-          
-          // convert canvas to DataURL
-          var url = canvas.toDataURL();
 
-          // put in a new favicon
-          $("head").append($('<link rel="shortcut icon" type="image/x-icon" href="'+url+'" />'));
-        },
-        
+        canvases: {}, // cache for canvas objects
         func: function favicon (stream, plugin) {
           $(document).bind("notify:tweet:unread", function (e, count) {
-            var color = "#000000";
-            if(count > 0) {
-              color = "#278BF5";
-            }
-            plugin.colorCanvas(color);
+            // remove the current favicon. Just changing the href doesnt work.
+            var favicon = $("link[rel~=icon]")
+            favicon.remove()
+            url = count > 0 ? "images/streamie-full.ico" : "images/streamie-empty.ico";
+
+            // put in a new favicon
+            $("head").append($('<link rel="shortcut icon" type="image/x-icon" href="'+url+'" />'));
           })
         }
       },
-      
+
       // Use the REST API to load the users's friends timeline, mentions and friends's retweets into the stream
       // this also happens when we detect that the user was offline for a while
       prefillTimeline: {
-        func: function prefillTimeline (stream) { 
-          
+        func: function prefillTimeline (stream) {
+
           function prefill () {
             var all = [];
             var returns = 0;
@@ -290,18 +269,18 @@ require.def("stream/initplugins",
               }
               handle.apply(this, arguments);
             }
-            
+
             // Make API calls
             rest.get("/1/statuses/friends_timeline.json?count=100", handleSince);
             rest.get("/1/favorites.json", handle);
             rest.get("/1/direct_messages.json", handle)
             rest.get("/1/direct_messages/sent.json", handle)
           }
-          
+
           $(document).bind("awake", function (e, duration) { // when we awake, we might have lost some tweets
             setTimeout(prefill, 4000); // wait for network to come online
           });
-          
+
           prefill(); // do once at start
         }
       }
