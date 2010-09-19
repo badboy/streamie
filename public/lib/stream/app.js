@@ -36,7 +36,8 @@ require.def("stream/app",
       streamPlugin.prepend,
       streamPlugin.keepScrollState,
       streamPlugin.expandLinks,
-      streamPlugin.newTweetEvent
+      streamPlugin.newTweetEvent,
+      streamPlugin.webkitNotify
     ];
 
     // initPlugins are loaded when the page is loaded and the backend web socket connection has been established
@@ -50,6 +51,7 @@ require.def("stream/app",
       initPlugin.notifyAfterPause,
       initPlugin.keyboardShortCuts,
       initPlugin.favicon,
+      initPlugin.registerWebkitNotifications,
       initPlugin.throttableNotifactions,
       initPlugin.background,
       status.observe,
@@ -102,7 +104,6 @@ require.def("stream/app",
                 initial = false;
                 // run initPlugins
                 initPlugins.forEach(function (plugin) {
-                  console.log(plugin);
                   plugin.func.call(function () {}, stream, plugin);
                 });
                 $(document).trigger("streamie:init:complete");
