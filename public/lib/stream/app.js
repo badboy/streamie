@@ -104,6 +104,7 @@ require.def("stream/app",
                 initial = false;
                 // run initPlugins
                 initPlugins.forEach(function (plugin) {
+                  console.log(plugin);
                   plugin.func.call(function () {}, stream, plugin);
                 });
                 $(document).trigger("streamie:init:complete");
