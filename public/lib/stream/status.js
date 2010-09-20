@@ -1,6 +1,6 @@
 require.def("stream/status",
-  ["stream/twitterRestAPI", "stream/helpers", "stream/popin", "stream/location", "stream/settings", "stream/keyValueStore", "text!../templates/status.ejs.html", "/ext/jquery.autocomplete.js"],
-  function(rest, helpers, popin, location, settings, keyValue, replyFormTemplateText) {
+  ["stream/twitterRestAPI", "stream/streamplugins", "stream/helpers", "stream/popin", "stream/location", "stream/settings", "stream/keyValueStore", "text!../templates/status.ejs.html", "/ext/jquery.autocomplete.js"],
+  function(rest, streamPlugins, helpers, popin, location, settings, keyValue, replyFormTemplateText) {
     var replyFormTemplate = _.template(replyFormTemplateText);
 
     settings.registerNamespace("status", "Status");
@@ -144,17 +144,67 @@ require.def("stream/status",
         }
       },
 
+      // Shorten URLs in statuses
+      shortenURLs: {
+        func: function shortenURLs (stream) {
+          // Get credentials from localStorage (later settings) or use streamie's
+          // We assume that these can be public so they are in the repo.
+          var apiKey = window.localStorage.getItem("bitly-apiKey") || "R_c80c96d15b82d9d02ef130575666a461";
+          var user   = window.localStorage.getItem("bitly-user")   || "streamie";
+          var domain = window.localStorage.getItem("bitly-domain") || "j.mp";
+
+          var baseURL = "http://api.bit.ly/v3/shorten?apiKey="+
+            encodeURIComponent(apiKey)+"&login="+
+            encodeURIComponent(user)+"&domain="+
+            encodeURIComponent(domain)+"&format=json&callback=?&longURL=";
+
+          var RE = streamPlugins.formatTweetText.GRUBERS_URL_RE;
+
+          // listen to click on the shortenURLs buttons
+          $(document).delegate("form.status .shortenURLs", "click", function (e) {
+            e.preventDefault();
+            var form = $(this).closest("form.status");
+            var input = form.find("[name=status]");
+            var matches = input.val().match(RE);
+            if(matches) {
+              matches.forEach(function(longURL) {
+                if(longURL.length > "http://j.mp/aYYiOl".length) { // it is worth it?
+                  var url = baseURL+encodeURIComponent(longURL);
+                  $.getJSON(url, function (info, status) {
+                    if(info) {
+                      if(info.status_code != "200") {
+                        console.log("[BITLY] "+url);
+                        console.log(info)
+                      } else {
+                        var text = input.val();
+                        // replace actual status text
+                        text = text.replace(longURL, info.data.url);
+                        input.val(text)
+                      }
+                    }
+                  })
+                }
+              })
+            }
+          });
+
+        }
+      },
+
+      // Implement image Upload via the imgur API
       mediaUpload: {
         func: function imageUpload (stream) {
 
           var statusForm;
 
+          // show popin
           $(document).delegate("form.status .attachImage", "click", function (e) {
             e.preventDefault();
             statusForm = $(this).closest("form.status");
             popin.show("imageUpload");
           });
 
+          // user selected file, upload immediately and add URL to status
           $(document).delegate("#imageUpload [name=file]", "change", function () {
             var file = this;
             var form = $(this).closest("form");
@@ -323,6 +373,7 @@ require.def("stream/status",
                 $("head").append(style);
             }
 
+
             $("li."+className).each(function () {
               var li = $(this);
               var tweet = li.data("tweet");
@@ -342,11 +393,11 @@ require.def("stream/status",
             var li = target.closest("li.tweet");
             var copy = li.clone();
             var p = copy.find("p.text");
-            
+
             target.animate({ // initial size increase to fit the JSON
               height: "400px"
             }, 500, function () {
-            
+
               copy.addClass("back");
               copy.addClass("yourself");
               var position = li.position();
@@ -354,26 +405,26 @@ require.def("stream/status",
                 top: position.top+"px",
                 left: position.left+"px"
               });
-            
+
               var tweet = li.data("tweet");
               var pre   = $("<pre class='text json'/>");
               tweet = _.clone(tweet);
               delete tweet.node; // chrome hates stringifying these;
-            
-            
+
+
               pre.text(JSON.stringify( tweet, null, " " ));
               pre.width($(this).width())
-            
+
               p.css("position", "absolute").after(pre);
               pre.hide().fadeIn(1500);
               p.hide();
-            
+
               li.after(copy);
-            
+
               target.height(); // measuring the height at this point helps. I love browsers!
-            
+
               li.addClass("flipped");
-            
+
               pre.bind("dblclick", function () {
                 copy.remove();
                 li.removeClass("flipped");
