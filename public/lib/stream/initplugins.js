@@ -3,7 +3,7 @@
  */
 
 require.def("stream/initplugins",
-  ["stream/tweet", "stream/settings", "stream/twitterRestAPI", "stream/helpers", "text!../templates/tweet.ejs.html"],
+  ["stream/tweet", "stream/settings", "stream/twitterRestAPI", "stream/helpers", "text!../templates/tweet.ejs.html", "ext/cookie.js"],
   function(tweetModule, settings, rest, helpers, templateText) {
 
     settings.registerNamespace("general", "General");
@@ -31,16 +31,16 @@ require.def("stream/initplugins",
             if(scrollState != null) {
               win.scrollTop(scrollState);
             }
-            
+
             if(!plugin.StyleAppended[val] && val != "all") {
               plugin.StyleAppended[val] = true;
-              var className = val.replace(/\W/g, "");
+              var className = val.replace(/[^\w-]/g, "");
               // add some dynamic style to the page to hide everything besides things tagged with the current state
               var style = '<style type="text/css" id>'+
                 'body.'+className+' #content #stream li {display:none;}\n'+
                 'body.'+className+' #content #stream li.'+className+' {display:block;}\n'+
                 '</style>';
-            
+
               style = $(style);
               $("head").append(style);
             }
@@ -82,6 +82,15 @@ require.def("stream/initplugins",
             }
           });
 
+          // meta navigation
+          // Logout button
+          $("#meta").delegate(".logout", "click", function (e) {
+            e.preventDefault();
+            cookie.set("token", ""); // delete cookie
+            location.href = "/"; // reload page
+          });
+
+          // main header
           $("#header").delegate("#mainnav a", "click", function (e) {
             var a = $(this);
             a.blur();
@@ -298,17 +307,17 @@ require.def("stream/initplugins",
           prefill(); // do once at start
         }
       },
-      
+
       registerWebkitNotifications: {
         func: function registerWebkitNotifications() {
           var permission = window.webkitNotifications &&
             window.webkitNotifications.checkPermission();
-        
+
           //- The user can only be asked for to allow webkitNotifications if she slicks
           //  something. If we requestPermission() without user interaction, it is ignored
           //  silently.
           //- callback() is called when the user clicks on the settings dialog
-        
+
           var callback = function(value, namespace, key) {
             var permission = window.webkitNotifications &&
               window.webkitNotifications.checkPermission();
@@ -322,19 +331,19 @@ require.def("stream/initplugins",
                   // after the user allowed or disallowed webkitNotification rights, change the
                   // gui accordingly
                   settings.set(namespace, key, window.webkitNotifications.checkPermission() == 0);
-                }); 
+                });
               } else if (permission == 2) {
                 // "blocked" -> tell the user how to unblock (it seems she wants to do that)
-                // todo: non-chrome users do what? 
+                // todo: non-chrome users do what?
                 // -> let's wait for the second browser to implement webkitNotifications
                 alert('To enable notifications, go to ' +
                   '"Preferences > Under the Hood > Content Settings > Notifications > Exceptions"' +
                   ' and remove blocking of "' + window.location.hostname + '"');
                 settings.set(namespace, key, false); //disable again
-              } 
+              }
             }
-          } 
-        
+          }
+
           if (window.webkitNotifications) {
             // only register settings if browser allows that
             settings.registerKey('notifications', 'enableWebkitNotifications', 'Chrome notifications',
@@ -346,7 +355,7 @@ require.def("stream/initplugins",
               // a js alert will be shown (see callback() above)
               settings.set('notifications', 'enableWebkitNotifications', false);
             }
-          } 
+          }
         }
       }
     }
