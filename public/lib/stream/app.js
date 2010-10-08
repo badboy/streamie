@@ -89,6 +89,8 @@ require.def("stream/app",
 
           // connect to the backend system
           var connect = function(data) {
+            console.log("!!!");
+            console.log(data);
             data = JSON.parse(data); // data must always be JSON
             if(data.error) {
               console.log(data.error);
@@ -113,7 +115,6 @@ require.def("stream/app",
             }
             else if(data.tweet) {
               // We actually received a tweet. Let the stream process it
-              console.log(data);
               var data = JSON.parse(data.tweet);
               if(data.direct_message) {
                 data = data.direct_message;
