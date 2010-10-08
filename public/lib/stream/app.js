@@ -89,8 +89,6 @@ require.def("stream/app",
 
           // connect to the backend system
           var connect = function(data) {
-            console.log("!!!");
-            console.log(data);
             data = JSON.parse(data); // data must always be JSON
             if(data.error) {
               console.log(data.error);
