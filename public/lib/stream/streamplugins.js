@@ -216,9 +216,15 @@ require.def("stream/streamplugins",
             $.getJSON('http://almaer.com/endpoint/resolver.php?callback=?',
               {url: link.href},
               function(url){
-                $(link).text(url);
-                $(link).attr('title', link.href); //set title to old one.
-                $(link).attr('href', url);
+                // Stupid Facebook!
+                // and sites like heise just return
+                //   "Location: /newsticker/..."
+                // When this happens: don't change urls.
+                if(!url.match(/facebook.com/i) && url.indexOf('/') != 0) {
+                  $(link).text(url);
+                  $(link).attr('title', link.href); //set title to old one.
+                  $(link).attr('href', url);
+                }
               })
             }
           });
