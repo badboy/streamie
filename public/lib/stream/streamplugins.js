@@ -7,11 +7,22 @@ require.def("stream/streamplugins",
   ["stream/tweet", "stream/settings", "stream/twitterRestAPI", "stream/helpers", "stream/keyValueStore", "text!../templates/tweet.ejs.html"],
   function(tweetModule, settings, rest, helpers, keyValue, templateText) {
 
+    settings.registerNamespace("filter", "Filter");
+    settings.registerKey("filter", "longConversation", "Filter long (more than 3 tweets) conversations",  false);
+
     settings.registerNamespace("stream", "Stream");
     settings.registerKey("stream", "showRetweets", "Show Retweets",  true);
     settings.registerKey("stream", "keepScrollState", "Keep scroll level when new tweets come in",  true);
     settings.registerKey("stream", "translate", "Automatically translate to your prefered language", false );
-    settings.registerKey("stream", "preferedLanguage", "Prefered language", "en", { "en": "English", "fr": "French" } );
+
+    // convert google.language.Languages list of support languages to a settings values
+    var translateValues  = {};
+    for(var humanLang in google.language.Languages){
+      var codeLang  = google.language.Languages[humanLang];
+      if( codeLang.length == 0 ) continue;
+      translateValues[codeLang] = humanLang.charAt(0).toUpperCase() + humanLang.substring(1).toLowerCase();
+    }
+    settings.registerKey("stream", "preferedLanguage", "Prefered language", "en", translateValues );
 
     var template = _.template(templateText);
 
@@ -29,6 +40,26 @@ require.def("stream/streamplugins",
     });
 
     return {
+
+      // Twitter changed some of the IDs to have a second variant that is represented
+      // as a string because JavaScript does not handle numbers above 2**43 well.
+      // Because we are JavaScript, we ignore the old variants and replace them with the
+      // string variants.
+      stringIDs: {
+        func: function stringIDs (tweet) {
+          var data = tweet.data;
+          data.id = data.id_str;
+          data.in_reply_to_status_id = data.in_reply_to_status_id_str;
+          if(data.retweeted_status) {
+            data = data.retweeted_status
+            data.id = data.id_str;
+            data.in_reply_to_status_id = data.in_reply_to_status_id_str;
+          }
+          this();
+        }
+      },
+
+>>>>>>> e8a557718b344860ae4fb03818ac021f818ce301
       // Turns direct messages into something similar to a tweet
       // Because Streamie uses a stream methaphor for everything it does not make sense to
       // make a special case for direct messages
@@ -189,7 +220,9 @@ require.def("stream/streamplugins",
         }
       },
 
-      //
+      // Group the tweet into conversations.
+      // This also tries to work for conversations between more than two people
+      // by tracking the "root" node of the conversation
       conversations: {
         func: function conversations (tweet, stream, plugin) {
           var id = tweet.data.id;
@@ -204,12 +237,15 @@ require.def("stream/streamplugins",
             tweet.conversation = Conversations[id] = Conversations[in_reply_to];
           } else {
             tweet.conversation = Conversations[id] = {
-              index: ConversationCounter++
+              index: ConversationCounter++,
+              tweets: 0
             };
             if(in_reply_to) {
               Conversations[in_reply_to] = tweet.conversation;
             }
           }
+          tweet.conversation.tweets++;
+
           tweet.fetchNotInStream = function (cb) {
             var in_reply_to = tweet.data.in_reply_to_status_id;
             if(in_reply_to && !Tweets[in_reply_to]) {
@@ -380,9 +416,22 @@ require.def("stream/streamplugins",
       newTweetEvent: {
         func: function newTweetEvent (tweet) {
           // Do not fire for tweets
-          if(!tweet.prefill) {
+          if(!tweet.prefill && !tweet.filtered) {
             // { custom-event: tweet:new }
             tweet.node.trigger("tweet:new", [tweet])
+          }
+          this();
+        }
+      },
+
+      filter: {
+        func: function filter (tweet) {
+          if(settings.get("stream", "showRetweets")) {
+            if(tweet.conversation.tweets > 3) {
+              tweet.filtered = {
+                reason: "long-conversation"
+              }
+            }
           }
           this();
         }
@@ -422,6 +471,7 @@ require.def("stream/streamplugins",
           // if we have the rights and its enabled in the settings
           if (!tweet.seenBefore &&
             !tweet.prefill &&
+            !tweet.filtered &&
             !tweet.yourself &&
             plugin.current < 5 &&
             settings.get('notifications', 'enableWebkitNotifications') &&

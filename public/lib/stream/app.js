@@ -20,6 +20,7 @@ require.def("stream/app",
     // They receive two paramters. The tweet which is an instance of stream/tweet.Tweet
     // and the stream which is an instance of stream/tweetstream.Stream.
     var streamPlugins = [
+      streamPlugin.stringIDs,
       streamPlugin.handleDirectMessage,
       streamPlugin.handleRetweet,
       streamPlugin.tweetsOnly,
@@ -32,6 +33,7 @@ require.def("stream/app",
       streamPlugin.htmlEncode,
       streamPlugin.formatTweetText,
       streamPlugin.executeLinkPlugins,
+      streamPlugin.filter,
       streamPlugin.renderTemplate,
       streamPlugin.age,
       streamPlugin.prepend,
@@ -65,6 +67,7 @@ require.def("stream/app",
       status.conversation,
       status.autocomplete,
       status.shortenURLs,
+      status.uncollapse,
       status.showJSON,
       status.translateToggle,
       settingsDialog.init

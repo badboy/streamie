@@ -30,6 +30,29 @@
 				-webkit-animation-duration: 2s;
 				-webkit-animation-iteration-count: 1;
 			}
+			&.collapsed{
+			    > a {
+			        top: 0;
+			        img {
+    				    width: 18px;
+    				    height: 18px;
+    				}
+			    }
+			    .retweet-user-href-icon {
+			        display:none;
+			    }
+				div.status{
+					cursor:pointer;
+					min-height:0;
+					height:0;
+					overflow:hidden;
+					#client-transition-time > .short;
+					*,
+					&:after{
+						opacity:0;
+					}
+				}
+			}
 			&.gap{
 				padding-bottom:10px;
 				border-bottom:4px dashed #999;
