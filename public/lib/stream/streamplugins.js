@@ -59,7 +59,6 @@ require.def("stream/streamplugins",
         }
       },
 
->>>>>>> e8a557718b344860ae4fb03818ac021f818ce301
       // Turns direct messages into something similar to a tweet
       // Because Streamie uses a stream methaphor for everything it does not make sense to
       // make a special case for direct messages
