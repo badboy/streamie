@@ -13,7 +13,7 @@ require.def("stream/streamplugins",
     settings.registerNamespace("stream", "Stream");
     settings.registerKey("stream", "showRetweets", "Show Retweets",  true);
     settings.registerKey("stream", "keepScrollState", "Keep scroll level when new tweets come in",  true);
-    settings.registerKey("stream", "translate", "Automatically translate to your prefered language", false );
+    settings.registerKey("stream", "translate", "Automatically translate to your preferred language", false );
 
     // convert google.language.Languages list of support languages to a settings values
     var translateValues  = {};
@@ -22,7 +22,7 @@ require.def("stream/streamplugins",
       if( codeLang.length == 0 ) continue;
       translateValues[codeLang] = humanLang.charAt(0).toUpperCase() + humanLang.substring(1).toLowerCase();
     }
-    settings.registerKey("stream", "preferedLanguage", "Prefered language", "en", translateValues );
+    settings.registerKey("stream", "preferedLanguage", "Preferred language", "en", translateValues );
 
     var template = _.template(templateText);
 
@@ -425,7 +425,7 @@ require.def("stream/streamplugins",
 
       filter: {
         func: function filter (tweet) {
-          if(settings.get("stream", "showRetweets")) {
+          if(settings.get("filter", "longConversation")) {
             if(tweet.conversation.tweets > 3) {
               tweet.filtered = {
                 reason: "long-conversation"
