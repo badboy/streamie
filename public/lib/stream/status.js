@@ -160,6 +160,10 @@ require.def("stream/status",
           $(document).delegate("form.status [name=status]", "focus", function (e) {
             updateCharCount(e)
             var textarea = $(e.target);
+            var interval = textarea.data("charUpdateInterval");
+            if(interval) {
+              clearInterval(interval);
+            }
             textarea.data("charUpdateInterval", setInterval(function () { updateCharCount(e) }, 200));
             textarea.trigger("status:focus", [textarea]);
           })
@@ -169,6 +173,28 @@ require.def("stream/status",
               clearInterval(interval);
             }
           })
+        }
+      },
+
+      // Send a direct message
+      newDirectMessage: {
+        func: function newDirectMessage (stream) {
+          var RE = streamPlugins.formatTweetText.GRUBERS_URL_RE;
+
+          // listen to click on the shortenURLs buttons
+          $(document).delegate("form.status .directMessage", "click", function (e) {
+            e.preventDefault();
+            var form = $(this).closest("form.status");
+            var input = form.find("[name=status]");
+
+            var text = input.val();
+            if(!text.match(/^d\s+/)) {
+              var prefix = 'd @';
+              text = prefix + (text ? ' ' + text : '');
+              setCaret(form, text, prefix.length, prefix.length);
+            }
+
+          });
         }
       },
 
@@ -201,13 +227,15 @@ require.def("stream/status",
                   $.getJSON(url, function (info, status) {
                     if(info) {
                       if(info.status_code != "200") {
+                        alert('URL shortening failed');
                         console.log("[BITLY] "+url);
                         console.log(info)
                       } else {
                         var text = input.val();
                         // replace actual status text
                         text = text.replace(longURL, info.data.url);
-                        input.val(text)
+                        input.val(text);
+                        input.focus();
                       }
                     }
                   })
