@@ -65,6 +65,7 @@ require.def("stream/app",
       status.quote,
       status.retweet,
       status.favorite,
+      status.deleteStatus,
       status.conversation,
       status.autocomplete,
       status.shortenURLs,
@@ -88,6 +89,13 @@ require.def("stream/app",
     return {
       start: function () {
         $(function () {
+          
+          $('#showMoreInfo').click(function(e) {
+            e.preventDefault();
+            $(this).remove();
+            $('#moreinfo').show();
+          })
+          
           stream.addPlugins(streamPlugins);
           stream.addLinkPlugins(linkPlugins);
 
@@ -115,6 +123,7 @@ require.def("stream/app",
                   plugin.func.call(function () {}, stream, plugin);
                 });
                 $(document).trigger("streamie:init:complete");
+                $(document).trigger("streamie:activeuse", [stream.user.screen_name]);
               }
             }
             else if(data.tweet) {

@@ -10,8 +10,9 @@ require.def("stream/initplugins",
     settings.registerKey("general", "showTwitterBackground", "Show my background from Twitter",  false);
 
     settings.registerNamespace("notifications", "Notifications");
-    settings.registerKey("notifications", "favicon", "Highlight Favicon (Website icon)",  true);
-    settings.registerKey("notifications", "throttle", "Throttle (Only notify once per minute)", false);
+    settings.registerKey("notifications", "tweets", "Notify for new tweets (yellow icon)",  true);
+    settings.registerKey("notifications", "mentions", "Notify for new mentions (green icon)",  true);
+    settings.registerKey("notifications", "direct", "Notify for new direct messages (blue icon)",  true);
 
     return {
 
@@ -48,9 +49,16 @@ require.def("stream/initplugins",
           win.bind("hashchange", change); // who cares about old browsers?
           change();
 
+          var scrollTimer;
+          function scrollTimeout() {
+            window.Streamie_Just_Scrolled = false;
+          }
           win.bind("scroll", function () {
             plugin.ScrollState[location.hash.replace(/^\#/, "") || "all"] = win.scrollTop();
-          })
+            window.Streamie_Just_Scrolled = true;
+            clearTimeout(scrollTimer);
+            scrollTimer = setTimeout(scrollTimeout, 1000);
+          });
         }
       },
 
@@ -106,7 +114,7 @@ require.def("stream/initplugins",
                 // delays the transition by about 2 seconds in Chrome.
                 setTimeout(function() {
                   mainstatus.find("[name=status]").focus();
-                }, 500); 
+                }, 500);
               }
             }
             if(li.hasClass("activatable")) { // special case for new tweet
@@ -150,35 +158,36 @@ require.def("stream/initplugins",
           $(document).bind("notify:tweet:unread", function () {
             redraw();
           });
-          $(document).bind("tweet:new", function () {
-            newCount++;
-            if(dirty) {
-              $(document).trigger("tweet:unread", [newCount])
+          $(document).bind("tweet:new", function (e, tweet) {
+            if(tweet.yourself) { // your own tweets are never unread
+              return;
             }
+            newCount++;
+            $(document).trigger("tweet:unread", [newCount, tweet.mentioned, tweet.direct_message])
           })
         }
       },
 
-      // tranform "tweet:unread" events into "notify:tweet:unread" events
-      // depending on setting, only fire the latter once a minute
+      // Tranform "tweet:unread" events into "notify:tweet:unread" events
+      // Filter events based on setting.
       throttableNotifactions: {
         func: function throttableNotifactions () {
-          var notifyCount = null;
-          setInterval(function () {
-            // if throttled, only redraw every N seconds;
-            if(settings.get("notifications", "throttle")) {
-              if(notifyCount != null) {
-                $(document).trigger("notify:tweet:unread", [notifyCount]);
-                notifyCount = null;
-              }
+          $(document).bind("tweet:unread", function (e, count, isMention, isDirectMessage) {
+            function notify() {
+              $(document).trigger("notify:tweet:unread", [count, isMention, isDirectMessage])
             }
-          }, 60 * 1000) // turn this into a setting
-          $(document).bind("tweet:unread", function (e, count) {
-            // disable via setting
-            if(settings.get("notifications", "throttle")) {
-              notifyCount = count;
+            if(isMention) {
+              if(settings.get("notifications", "mentions")) {
+                notify();
+              }
+            } else if(isDirectMessage) {
+              if(settings.get("notifications", "direct")) {
+                notify();
+              }
             } else {
-              $(document).trigger("notify:tweet:unread", [count])
+              if(settings.get("notifications", "tweets")) {
+                notify();
+              }
             }
           });
         }
@@ -229,11 +238,31 @@ require.def("stream/initplugins",
       // display state in the favicon
       favicon: {
         func: function favicon (stream, plugin) {
-          $(document).bind("notify:tweet:unread", function (e, count) {
+          var importantActive = false;
+          $(document).bind("notify:tweet:unread", function (e, count, isMention, isDirectMessage) {
+            var url;
+            if(count > 0) {
+              url =  "images/streamie-unread.ico";
+              if(isMention) {
+                url = "images/streamie-mention.ico";
+                importantActive = true;
+              }
+              else if(isDirectMessage) {
+                url = "images/streamie-direct.ico"
+                importantActive = true;
+              } else {
+                if(importantActive) { // we should not change away
+                  return;
+                }
+              }
+            } else {
+              importantActive = false;
+              url = "images/streamie-empty.ico";
+            }
+
             // remove the current favicon. Just changing the href doesnt work.
             var favicon = $("link[rel~=icon]")
-            favicon.remove()
-            url = count > 0 ? "images/streamie-full.ico" : "images/streamie-empty.ico";
+            favicon.remove();
 
             // put in a new favicon
             $("head").append($('<link rel="shortcut icon" type="image/x-icon" href="'+url+'" />'));
@@ -285,25 +314,25 @@ require.def("stream/initplugins",
                 }
                 if(oldest) {
                   // fetch other types of statuses since the last regular status
-                  rest.get("/1/statuses/retweeted_to_me.json?since_id="+oldest.id, handle);
-                  rest.get("/1/statuses/mentions.json?since_id="+oldest.id, handle);
+                  rest.get("/1/statuses/retweeted_to_me.json?include_entities=true&since_id="+oldest.id, handle);
+                  rest.get("/1/statuses/mentions.json?include_entities=true&since_id="+oldest.id, handle);
                 } else {
-                  rest.get("/1/statuses/retweeted_to_me.json?count=20", handle);
-                  rest.get("/1/statuses/mentions.json?count=50", handle);
+                  rest.get("/1/statuses/retweeted_to_me.json?include_entities=true&count=20", handle);
+                  rest.get("/1/statuses/mentions.json?include_entities=true&count=50", handle);
                 }
               }
               handle.apply(this, arguments);
             }
 
             // Make API calls
-            rest.get("/1/statuses/friends_timeline.json?count=100", handleSince);
-            rest.get("/1/favorites.json", handle);
-            rest.get("/1/direct_messages.json", handle);
-            rest.get("/1/direct_messages/sent.json", handle);
+            rest.get("/1/statuses/friends_timeline.json?include_entities=true&count=100", handleSince);
+            rest.get("/1/favorites.json?include_entities=true&", handle);
+            rest.get("/1/direct_messages.json?include_entities=true&", handle);
+            rest.get("/1/direct_messages/sent.json?include_entities=true&", handle);
             console.log("[prefil] prefilling timeline");
           }
 
-          $(document).bind("awake", function (e, duration) { // when we awake, we might have lost some tweets
+          $(document).bind("awake", function (e, duration) { // when we awake, we might have lost some tweets
             setTimeout(prefill, 4000); // wait for network to come online
           });
 

@@ -18,6 +18,7 @@ require.def("stream/tracking",
       "state:starred",
       "state:direct",
       "status:retweet",
+      "status:delete",
       "status:favorite",
       "status:favoriteDestroy"
     ];
@@ -30,16 +31,20 @@ require.def("stream/tracking",
         key = key.replace(/\d+/g, "");
 
         if(typeof _gaq != "undefined") {
-          _gaq.push(['_trackEvent', parts[0], key, event, value]);
+          // there will be NO tracking in my fork!
+          //_gaq.push(['_trackEvent', parts[0], key, event, value]);
         }
       }
     }
 
     events.forEach(function (name) {
       $(document).bind(name, function (e, value) {
-        track(name, value)
-      })
-    })
+        track(name, value);
+      });
+    });
+    $(document).bind("streamie:activeuse", function (e, screen_name) {
+      track("activeuse:" + screen_name);
+    });
 
     return {}
   }
