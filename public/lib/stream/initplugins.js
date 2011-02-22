@@ -243,17 +243,8 @@ require.def("stream/initplugins",
             var url;
             if(count > 0) {
               url =  "images/streamie-unread.ico";
-              if(isMention) {
-                url = "images/streamie-mention.ico";
-                importantActive = true;
-              }
-              else if(isDirectMessage) {
-                url = "images/streamie-direct.ico"
-                importantActive = true;
-              } else {
-                if(importantActive) { // we should not change away
-                  return;
-                }
+              if(importantActive) { // we should not change away
+                return;
               }
             } else {
               importantActive = false;
