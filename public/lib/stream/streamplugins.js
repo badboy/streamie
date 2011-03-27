@@ -319,12 +319,18 @@ require.def("stream/streamplugins",
         func: function(tweet){
           tweet.node.find('.text a').each(function(index, link){
           if(link.href.length < 30 && link.href == $(link).text()){ //assume no shortener uses > 30 chrs
-            $.getJSON('http://almaer.com/endpoint/resolver.php?callback=?',
+            // old url: http://almaer.com/endpoint/resolver.php?callback=?
+            // I hope it is stable enough.
+            $.getJSON('http://fnordig.de/resolve?callback=?',
               {url: link.href},
               function(url){
                 // Stupid Facebook!
                 // and sites like heise just return
                 //   "Location: /newsticker/..."
+                //   ^ this is fixed in fnordig resolver,
+                //     the protocol and host is prepended.
+                // Still: facebook redirects to login page → sucks.
+                //
                 // When this happens: don't change urls.
                 if(!url.match(/facebook.com/i) && url.indexOf('/') != 0) {
                   $(link).text(url);
