@@ -198,6 +198,26 @@ require.def("stream/status",
         }
       },
 
+      // Add geo info if the user enables it for this tweet.
+      addGeoInfo: {
+        func: function addGeoInfo (stream) {
+          $(document).delegate("form.status .addGeo", "click", function (e) {
+            e.preventDefault();
+            settings.set("status", "addLocation", true);
+            var link = $(e.target);
+            link.text('✔ Add location');
+            $("textarea[name=status]").focus();
+
+            var onSubmitHandler = function(f) {
+              link.text('Add location');
+              settings.set("status", "addLocation", false);
+              $("form.status").unbind('submit', onSubmitHandler);
+            }
+            $("form.status").submit(onSubmitHandler);
+          });
+        }
+      },
+
       // Shorten URLs in statuses
       shortenURLs: {
         func: function shortenURLs (stream) {
@@ -375,14 +395,17 @@ require.def("stream/status",
       location: {
         func: function locationPlugin () {
           $(document).delegate("textarea[name=status]", "focus", function () {
+            var form = $(this).closest("form");
             if(settings.get("status", "addLocation")) {
-              var form = $(this).closest("form");
-
               location.get(function (position) {
                 form.find("[name=lat]").val(position.coords.latitude)
                 form.find("[name=long]").val(position.coords.longitude)
                 form.find("[name=display_coordinates]").val("true");
               });
+            } else {
+              form.find("[name=lat]").val('')
+              form.find("[name=long]").val('')
+              form.find("[name=display_coordinates]").val("false");
             }
           });
         }
